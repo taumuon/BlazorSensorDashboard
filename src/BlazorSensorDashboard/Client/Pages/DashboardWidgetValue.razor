@@ -1,0 +1,45 @@
+﻿@using BlazorSensorDashboard.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HubStreamSubscriptionService HubStreamSubscription
+@implements IDisposable
+
+@if (Loading)
+{
+    <h5 class="display-4">Loading...</h5>
+}
+else
+{
+    <h5 class="display-4">@Value.ToString("0.00") <small>@Units</small></h5>
+}
+
+@code {
+    [Parameter]
+    public DashboardConfigItem dashboardConfigItem { get; set; }
+
+    IDisposable sensorReadingSubscription;
+
+    bool Loading { get; set; } = true;
+    double Value { get; set; }
+    string Units { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        Units = "-";
+        Console.WriteLine("OnInitializedAsync " + this.dashboardConfigItem.SensorName);
+
+        sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+            .Subscribe(x =>
+            {
+                Loading = false;
+                Value = x.Value;
+                StateHasChanged();
+            });
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        sensorReadingSubscription?.Dispose();
+    }
+}

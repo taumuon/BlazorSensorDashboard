@@ -1,0 +1,60 @@
+﻿@page "/"
+@using BlazorSensorDashboard.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<h1 class="mb-4">Sensor Dashboard with Blazor and SignalR</h1>
+
+@if (DashboardConfig == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2">
+        @foreach (var dashboardConfigItem in DashboardConfig)
+        {
+            <div class="col mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@dashboardConfigItem.SensorName</h5>
+                        <DashboardWidgetValue dashboardConfigItem=dashboardConfigItem />
+                        @if (dashboardConfigItem.MinMax)
+                        {
+                            <DashboardMinMax dashboardConfigItem=dashboardConfigItem />
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+@code {
+    private DashboardConfigItem[] DashboardConfig;
+
+    protected override Task OnInitializedAsync()
+    {
+        DashboardConfig = new DashboardConfigItem[]
+        {
+            /*new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value,  MinMax = true },
+            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Chart, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_2", Type = DashboardItemType.Chart, MinMax = false },
+            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Chart, MinMax = true }*/
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value,  MinMax = true },
+            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_2", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = true }
+            };
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+    }
+}

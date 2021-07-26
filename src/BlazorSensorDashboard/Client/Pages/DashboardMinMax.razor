@@ -1,0 +1,65 @@
+﻿@using BlazorSensorDashboard.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HubStreamSubscriptionService HubStreamSubscription
+@implements IDisposable
+
+<div class="card-footer">
+    <p>Min: @(MinValue?.ToString("0.00") ?? "-") @Units Max: @(MaxValue?.ToString("0.00") ?? "-") @Units</p>
+</div>
+
+@code {
+
+    [Parameter]
+    public DashboardConfigItem dashboardConfigItem { get; set; }
+
+    double? MinValue { get; set; } = null;
+    double? MaxValue { get; set; } = null;
+    string Units { get; set; } = "-"; // TODO: need to read from sensor config, from sensor name
+
+    IDisposable sensorReadingSubscription;
+
+
+    protected override Task OnInitializedAsync()
+    {
+        SubscribeStream();
+        return Task.CompletedTask;
+    }
+
+    private void SubscribeStream()
+    {
+        sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+        .Subscribe(item =>
+        {
+            bool changed = false;
+            if (MinValue == null)
+            {
+                MinValue = item.Value;
+                changed = true;
+            }
+            if (MaxValue == null)
+            {
+                MaxValue = item.Value;
+                changed = true;
+            }
+            if (item.Value < MinValue)
+            {
+                MinValue = item.Value;
+                changed = true;
+            }
+            if (item.Value > MaxValue)
+            {
+                MaxValue = item.Value;
+                changed = true;
+            }
+            if (changed)
+            {
+                StateHasChanged();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        sensorReadingSubscription?.Dispose();
+    }
+}
