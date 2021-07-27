@@ -1,5 +1,69 @@
-﻿<h3>DashboardChartWidget</h3>
+﻿@using BlazorSensorDashboard.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Linq; 
+@using System.Reactive.Disposables
+@inject HubStreamSubscriptionService HubStreamSubscription
+@inject ConfigurationService ConfigurationService
+@implements IDisposable
+
+@if (Loading)
+{
+    <h5 class="display-4">Loading...</h5>
+}
+else
+{
+<RadzenChart>
+    <RadzenLegend Visible="false" />
+    <RadzenLineSeries Data="@Values" CategoryProperty="Timestamp" LineType="LineType.Dashed" ValueProperty="Value">
+        <RadzenMarkers MarkerType="MarkerType.Circle" />
+    </RadzenLineSeries>
+    <RadzenCategoryAxis FormatString="{0:mm ss}" />
+    <RadzenValueAxis>
+        <RadzenGridLines Visible="true" />
+    </RadzenValueAxis>
+</RadzenChart>
+}
 
 @code {
+    [Parameter]
+    public DashboardConfigItem dashboardConfigItem { get; set; }
 
+    IDisposable subscriptions;
+
+    bool Loading { get; set; } = true;
+    SensorReading[] Values { get; set; } = new SensorReading[] { };
+    string Units { get; set; } = "-";
+
+    protected override Task OnInitializedAsync()
+    {
+        Console.WriteLine("OnInitializedAsync " + this.dashboardConfigItem.SensorName);
+
+        var sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+            .Subscribe(x =>
+            {
+                Loading = false;
+                Values = (Values.Concat(new SensorReading[] { x })).TakeLast(10).ToArray(); // TODO: do more elegantly
+                StateHasChanged();
+            });
+
+        var configurationSubcription = ConfigurationService.GetConfig()
+            .Subscribe(config =>
+            {
+                var foundItem = config.FirstOrDefault(x => x.Name == dashboardConfigItem.SensorName);
+                if (foundItem != null)
+                {
+                    Units = foundItem.SensorUnits;
+                    StateHasChanged();
+                }
+            });
+
+        subscriptions = new CompositeDisposable(sensorReadingSubscription, configurationSubcription);
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        subscriptions?.Dispose();
+    }
 }

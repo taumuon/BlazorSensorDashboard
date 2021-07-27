@@ -19,7 +19,14 @@ else
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">@dashboardConfigItem.SensorName</h5>
-                        <DashboardWidgetValue dashboardConfigItem=dashboardConfigItem />
+                        @if (dashboardConfigItem.Type == DashboardItemType.Value)
+                        {
+                            <DashboardWidgetValue dashboardConfigItem=dashboardConfigItem />
+                        }
+                        else
+                        {
+                            <DashboardWidgetChart dashboardConfigItem=dashboardConfigItem />
+                        }
                         @if (dashboardConfigItem.MinMax)
                         {
                             <DashboardMinMax dashboardConfigItem=dashboardConfigItem />
@@ -37,18 +44,12 @@ else
     {
         DashboardConfig = new DashboardConfigItem[]
         {
-            /*new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
+            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
             new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value,  MinMax = true },
             new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = false },
             new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Chart, MinMax = false },
             new DashboardConfigItem{ SensorName = "temperature_room_2", Type = DashboardItemType.Chart, MinMax = false },
-            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Chart, MinMax = true }*/
-            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
-            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value,  MinMax = true },
-            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = false },
-            new DashboardConfigItem{ SensorName = "temperature_room_1", Type = DashboardItemType.Value, MinMax = false },
-            new DashboardConfigItem{ SensorName = "temperature_room_2", Type = DashboardItemType.Value, MinMax = false },
-            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Value, MinMax = true }
+            new DashboardConfigItem{ SensorName = "humidity_room_2", Type = DashboardItemType.Chart, MinMax = true }
             };
 
         return Task.CompletedTask;
