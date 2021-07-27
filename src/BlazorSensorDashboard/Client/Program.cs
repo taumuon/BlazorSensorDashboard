@@ -3,9 +3,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace BlazorSensorDashboard.Client
 {
@@ -21,8 +21,22 @@ namespace BlazorSensorDashboard.Client
                 var navigationManager = sp.GetRequiredService<NavigationManager>();
                 var loggerProvider = sp.GetRequiredService<ILoggerProvider>();
                 var hubConnectionService = new HubConnectionService(navigationManager, loggerProvider);
+                return hubConnectionService;
+            });
+
+            builder.Services.AddSingleton(sp =>
+            {
+                var hubConnectionService = sp.GetRequiredService<HubConnectionService>();
                 var hubSubscriptionService = new HubStreamSubscriptionService(hubConnectionService);
                 return hubSubscriptionService;
+            });
+
+            builder.Services.AddSingleton(sp =>
+            {
+                var hubConnectionService = sp.GetRequiredService<HubConnectionService>();
+                var jsRuntime = sp.GetRequiredService<IJSRuntime>();
+                var configurationService = new ConfigurationService(hubConnectionService, jsRuntime);
+                return configurationService;
             });
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });

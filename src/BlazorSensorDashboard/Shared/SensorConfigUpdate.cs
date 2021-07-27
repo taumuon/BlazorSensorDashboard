@@ -1,6 +1,4 @@
-﻿using BlazorSensorDashboard.Shared;
-
-namespace BlazorSensorDashboard.Server.SensorManagement
+﻿namespace BlazorSensorDashboard.Shared
 {
     public class SensorConfigUpdate
     {

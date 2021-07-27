@@ -1,10 +1,12 @@
 ﻿@using BlazorSensorDashboard.Shared
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Reactive.Disposables;
 @inject HubStreamSubscriptionService HubStreamSubscription
+@inject ConfigurationService ConfigurationService
 @implements IDisposable
 
 <div class="card-footer">
-    <p>Min: @(MinValue?.ToString("0.00") ?? "-") @Units Max: @(MaxValue?.ToString("0.00") ?? "-") @Units</p>
+    <p>Min:@(MinValue?.ToString("0.00") ?? "-")@Units Max:@(MaxValue?.ToString("0.00") ?? "-")@Units</p>
 </div>
 
 @code {
@@ -14,9 +16,9 @@
 
     double? MinValue { get; set; } = null;
     double? MaxValue { get; set; } = null;
-    string Units { get; set; } = "-"; // TODO: need to read from sensor config, from sensor name
+    string Units { get; set; } = "-";
 
-    IDisposable sensorReadingSubscription;
+    IDisposable subscriptions;
 
 
     protected override Task OnInitializedAsync()
@@ -27,7 +29,7 @@
 
     private void SubscribeStream()
     {
-        sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+        var sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
         .Subscribe(item =>
         {
             bool changed = false;
@@ -56,10 +58,23 @@
                 StateHasChanged();
             }
         });
+
+        var configurationSubcription = ConfigurationService.GetConfig()
+            .Subscribe(config =>
+            {
+                var foundItem = config.FirstOrDefault(x => x.Name == dashboardConfigItem.SensorName);
+                if (foundItem != null)
+                {
+                    Units = foundItem.SensorUnits;
+                    StateHasChanged();
+                }
+            });
+
+        subscriptions = new CompositeDisposable(sensorReadingSubscription, configurationSubcription);
     }
 
     public void Dispose()
     {
-        sensorReadingSubscription?.Dispose();
+        subscriptions?.Dispose();
     }
 }

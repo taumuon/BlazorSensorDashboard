@@ -33,7 +33,7 @@ namespace BlazorSensorDashboard.Client
                     return conn;
                 }
 
-                Console.WriteLine($"GetConnection for url: {url}. CCreating new connection");
+                Console.WriteLine($"GetConnection for url: {url}. Creating new connection");
                 var newConnection = CreateConnection(url);
 
                 connectionMap[url] = newConnection;

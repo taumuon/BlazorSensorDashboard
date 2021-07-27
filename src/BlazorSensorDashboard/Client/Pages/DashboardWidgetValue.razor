@@ -1,6 +1,8 @@
 ﻿@using BlazorSensorDashboard.Shared
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Reactive.Disposables
 @inject HubStreamSubscriptionService HubStreamSubscription
+@inject ConfigurationService ConfigurationService 
 @implements IDisposable
 
 @if (Loading)
@@ -9,25 +11,24 @@
 }
 else
 {
-    <h5 class="display-4">@Value.ToString("0.00") <small>@Units</small></h5>
+    <h5 class="display-4">@Value.ToString("0.00")<small>@Units</small></h5>
 }
 
 @code {
     [Parameter]
     public DashboardConfigItem dashboardConfigItem { get; set; }
 
-    IDisposable sensorReadingSubscription;
+    IDisposable subscriptions;
 
     bool Loading { get; set; } = true;
     double Value { get; set; }
-    string Units { get; set; }
+    string Units { get; set; } = "-";
 
     protected override Task OnInitializedAsync()
     {
-        Units = "-";
         Console.WriteLine("OnInitializedAsync " + this.dashboardConfigItem.SensorName);
 
-        sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+        var sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
             .Subscribe(x =>
             {
                 Loading = false;
@@ -35,11 +36,24 @@ else
                 StateHasChanged();
             });
 
+            var configurationSubcription = ConfigurationService.GetConfig()
+                .Subscribe(config =>
+                {
+                    var foundItem = config.FirstOrDefault(x => x.Name == dashboardConfigItem.SensorName);
+                    if (foundItem != null)
+                    {
+                        Units = foundItem.SensorUnits;
+                        StateHasChanged();
+                    }
+                });
+
+        subscriptions = new CompositeDisposable(sensorReadingSubscription, configurationSubcription);
+
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        sensorReadingSubscription?.Dispose();
+        subscriptions?.Dispose();
     }
 }

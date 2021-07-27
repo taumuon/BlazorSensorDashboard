@@ -1,6 +1,7 @@
 ﻿using BlazorSensorDashboard.Server.SensorManagement;
 using BlazorSensorDashboard.Shared;
 using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Collections.Generic;
 
 namespace BlazorSensorDashboard.Server.Hubs
@@ -16,6 +17,7 @@ namespace BlazorSensorDashboard.Server.Hubs
 
         public IEnumerable<SensorConfigInfo> Sensors()
         {
+            Console.WriteLine("ConfigurationHub requesting Sensors");
             return _sensorConfigManager.Sensors;
         }
 
