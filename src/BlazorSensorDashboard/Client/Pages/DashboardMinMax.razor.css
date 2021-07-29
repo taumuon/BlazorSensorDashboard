@@ -1,0 +1,11 @@
+﻿.updatecolorbase {
+    color: black;
+    transition: color 1s;
+}
+
+.updatecolor {
+    color: red;
+}
+.updatecolorreset {
+    color: black;
+}

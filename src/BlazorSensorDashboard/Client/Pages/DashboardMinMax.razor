@@ -1,12 +1,14 @@
 ﻿@using BlazorSensorDashboard.Shared
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Reactive.Disposables;
+@using System.Reactive.Linq; 
 @inject HubStreamSubscriptionService HubStreamSubscription
 @inject ConfigurationService ConfigurationService
 @implements IDisposable
 
 <div class="card-footer">
-    <p>Min:@(MinValue?.ToString("0.00") ?? "-")@Units Max:@(MaxValue?.ToString("0.00") ?? "-")@Units</p>
+    <!-- TODO: trigger animation -->
+    <p>Min:<span class="updatecolorbase @MinClass">@(MinValue?.ToString("0.00") ?? "-")</span>@Units Max:<span class="updatecolorbase @MaxClass">@(MaxValue?.ToString("0.00") ?? "-")</span>@Units</p>
 </div>
 
 @code {
@@ -16,6 +18,8 @@
 
     double? MinValue { get; set; } = null;
     double? MaxValue { get; set; } = null;
+    string MinClass { get; set; } = "updatecolor"; # hack to get css transitions to work
+    string MaxClass { get; set; } = "updatecolor";
     string Units { get; set; } = "-";
 
     IDisposable subscriptions;
@@ -27,11 +31,29 @@
         return Task.CompletedTask;
     }
 
+
     private void SubscribeStream()
     {
-        var sensorReadingSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
-        .Subscribe(item =>
+        var sharedSubscription = HubStreamSubscription.SubscribeStream("StartListening", dashboardConfigItem.SensorName)
+            .Select(x =>
+            {
+                bool updated = false;
+                if (MinValue == null || MaxValue == null)
+                {
+                    updated = true;
+                }
+                else if (x.Value < MinValue || x.Value > MaxValue)
+                {
+                    updated = true;
+                }
+                return new { updated, Item = x };
+            })
+            .Publish();
+
+        var sensorReadingSubscription = sharedSubscription
+        .Subscribe(x =>
         {
+            var item = x.Item;
             bool changed = false;
             if (MinValue == null)
             {
@@ -46,11 +68,13 @@
             if (item.Value < MinValue)
             {
                 MinValue = item.Value;
+                MinClass = "updatecolor";
                 changed = true;
             }
             if (item.Value > MaxValue)
             {
                 MaxValue = item.Value;
+                MaxClass = "updatecolor";
                 changed = true;
             }
             if (changed)
@@ -58,6 +82,21 @@
                 StateHasChanged();
             }
         });
+
+        // hack to get css trnsitions to work
+        var sensorReadingUpdatedSubscription = sharedSubscription
+            .Where(x => x.updated)
+            .Throttle(TimeSpan.FromSeconds(1))
+            .Subscribe(item =>
+            {
+                System.Console.WriteLine("Throttled!");
+                MinClass = "updatecolorreset";
+                MaxClass = "updatecolorreset";
+                StateHasChanged();
+            }
+            );
+
+        var connectDisposable = sharedSubscription.Connect();
 
         var configurationSubcription = ConfigurationService.GetConfig()
             .Subscribe(config =>
@@ -70,7 +109,7 @@
                 }
             });
 
-        subscriptions = new CompositeDisposable(sensorReadingSubscription, configurationSubcription);
+        subscriptions = new CompositeDisposable(sensorReadingSubscription, configurationSubcription, sensorReadingUpdatedSubscription, connectDisposable);
     }
 
     public void Dispose()
