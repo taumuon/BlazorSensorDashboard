@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlazorSensorDashboard.Shared;
+using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 
@@ -13,36 +14,14 @@ namespace BlazorSensorDashboard.Server.SensorManagement
                 { "humidity_room_2", new FakeSensor(45) }
             };
 
-        private readonly Dictionary<string, IObservable<double>> _sensorObservables = new Dictionary<string, IObservable<double>>();
-        private readonly object _syncLock = new object();
-
+        private SharedObservables<string, double> _sharedObservables = new SharedObservables<string, double>();
 
         public IObservable<double> GetSensorObservable(string sensorIdentifier)
         {
-            lock (_syncLock)
+            return _sharedObservables.GetObservable(sensorIdentifier, () =>
             {
-                IObservable<double> obs;
-                if (!_sensorObservables.TryGetValue(sensorIdentifier, out obs))
-                {
-                    System.Diagnostics.Debug.WriteLine($"SensorManager adding {sensorIdentifier}");
-                    var source = _sensors[sensorIdentifier].GetReadings();
-
-                    obs = source
-                        .Finally(() =>
-                        {
-                            lock (_syncLock)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"SensorManager removing {sensorIdentifier}");
-                                _sensorObservables.Remove(sensorIdentifier);
-                            }
-                        })
-                        .Publish()
-                        .RefCount();
-
-                    _sensorObservables.Add(sensorIdentifier, obs);
-                }
-                return obs;
-            }
+                return _sensors[sensorIdentifier].GetReadings();
+            });
         }
     }
 }

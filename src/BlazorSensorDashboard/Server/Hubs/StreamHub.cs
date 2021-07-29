@@ -17,8 +17,6 @@ namespace BlazorSensorDashboard.Server.Hubs
             _sensorManager = sensorManager;
         }
 
-        // TODO: investigate SignalR 3 pub-sub
-        // TODO: dotnet core 3 async enumerables
         [HubMethodName("StartListening")]
         public ChannelReader<SensorReading> StartListening(string sensorIdentifier, CancellationToken cancellationToken)
         {

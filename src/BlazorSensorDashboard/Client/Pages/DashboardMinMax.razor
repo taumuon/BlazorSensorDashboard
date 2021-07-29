@@ -7,7 +7,7 @@
 @implements IDisposable
 
 <div class="card-footer">
-    <!-- TODO: trigger animation -->
+    <!-- class is a hack to trigger the css animation -->
     <p>Min:<span class="updatecolorbase @MinClass">@(MinValue?.ToString("0.00") ?? "-")</span>@Units Max:<span class="updatecolorbase @MaxClass">@(MaxValue?.ToString("0.00") ?? "-")</span>@Units</p>
 </div>
 

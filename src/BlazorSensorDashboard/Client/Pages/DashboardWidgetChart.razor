@@ -42,7 +42,7 @@ else
             .Subscribe(x =>
             {
                 Loading = false;
-                Values = (Values.Concat(new SensorReading[] { x })).TakeLast(10).ToArray(); // TODO: do more elegantly
+                Values = (Values.Concat(new SensorReading[] { x })).TakeLast(10).ToArray(); // TODO: more elegant to use a sliding window operator
                 StateHasChanged();
             });
 

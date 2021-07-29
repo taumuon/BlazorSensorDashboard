@@ -1,7 +1,6 @@
 ﻿using BlazorSensorDashboard.Shared;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
-using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 
@@ -11,7 +10,7 @@ namespace BlazorSensorDashboard.Client
     {
         HubConnectionService hubConnectionService;
 
-        Dictionary<string, IObservable<SensorReading>> sensorObservables = new Dictionary<string, IObservable<SensorReading>>();
+        SharedObservables<string, SensorReading> sharedObservables = new SharedObservables<string, SensorReading>();
 
         public HubStreamSubscriptionService(HubConnectionService hubConnectionService)
         {
@@ -32,30 +31,17 @@ namespace BlazorSensorDashboard.Client
 
         public IObservable<SensorReading> SubscribeStreamToHub(string streamName, string sensorName, HubConnection hubConnection)
         {
-            // TODO: abstract out with sensor manager
-            lock (_syncLock)
+            return sharedObservables.GetObservable(sensorName, () =>
             {
-                if (sensorObservables.TryGetValue(sensorName, out var obs))
-                {
-                    Console.WriteLine("Returning existing connection for " + streamName + ' ' + sensorName);
-                    return obs;
-                }
-
-                Console.WriteLine("subscribing to " + streamName + ' ' + sensorName);
-
                 var sensorObservable = Observable.Create<SensorReading>(async observer =>
                 {
                     var cancellationTokenSource = new CancellationTokenSource();
 
                     Console.WriteLine($"Subscribing to channel async for streamName: {streamName} sensorName: {sensorName}");
                     hubConnection.StreamAsync<SensorReading>(streamName, sensorName, cancellationTokenSource.Token);
-                    var ch = await hubConnection.StreamAsChannelAsync<SensorReading>(streamName, sensorName, cancellationTokenSource.Token);
-                    while (await ch.WaitToReadAsync())
+                    await foreach (var sensorReading in hubConnection.StreamAsync<SensorReading>(streamName, sensorName, cancellationTokenSource.Token))
                     {
-                        while (ch.TryRead(out var sensorReading))
-                        {
-                            observer.OnNext(sensorReading);
-                        }
+                        observer.OnNext(sensorReading);
                     }
 
                     Console.WriteLine("Completed");
@@ -63,24 +49,8 @@ namespace BlazorSensorDashboard.Client
 
                     return cancellationTokenSource;
                 });
-
-                var obsNew = sensorObservable
-                            .Finally(() =>
-                            {
-                                lock (_syncLock)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"Removing last subscription for streamName: {streamName} sensorName: {sensorName}");
-                                    sensorObservables.Remove(sensorName);
-                                }
-                            })
-                            .Publish()
-                            .RefCount();
-
-                sensorObservables[sensorName] = obsNew;
-
-                return obsNew;
-            }
+                return sensorObservable;
+            });
         }
-        private readonly object _syncLock = new object();
     }
 }
