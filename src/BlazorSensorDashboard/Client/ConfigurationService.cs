@@ -63,7 +63,6 @@ namespace BlazorSensorDashboard.Client
                     hubConnection.InvokeAsync<SensorConfigInfo[]>("Sensors")
                         .ContinueWith(data =>
                             {
-                                Console.WriteLine("Sensors invoked and returned data: " + data.Result);
                                 SensorConfigSubj.OnNext(data.Result);
                             });
                 });

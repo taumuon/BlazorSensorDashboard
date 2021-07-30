@@ -89,7 +89,6 @@
             .Throttle(TimeSpan.FromSeconds(1))
             .Subscribe(item =>
             {
-                System.Console.WriteLine("Throttled!");
                 MinClass = "updatecolorreset";
                 MaxClass = "updatecolorreset";
                 StateHasChanged();

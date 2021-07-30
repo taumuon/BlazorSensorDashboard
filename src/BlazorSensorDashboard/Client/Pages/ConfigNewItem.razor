@@ -1,0 +1,105 @@
+﻿@using BlazorSensorDashboard.Shared
+@using Microsoft.AspNetCore.Components.Forms
+@inject ConfigurationService ConfigurationService
+<h3>New Sensor</h3>
+<EditForm OnSubmit="@OnSubmit" EditContext="@editContext">
+
+    <DataAnnotationsValidator />
+    <div class="@(editContext.GetValidationMessages().Any() ? "alert alert-danger pb-0" : "")">
+        <ValidationSummary />
+    </div>
+
+    <div class="form-group">
+        <label for="sensorName">Name</label>
+        <input type="text"
+               class="form-control"
+               id="name"
+               @bind-value="sensorConfig.Name" name="name"
+               required />
+        @if (editContext.GetValidationMessages(() => sensorConfig.Name).Any())
+        {
+            <div class="invalid-feedback">
+                @editContext.GetValidationMessages(() => sensorConfig.Name).First()
+            </div>
+        }
+    </div>
+
+    <div class="form-group">
+        <label for="manufacturer">Manufacturer</label>
+        <input type="text"
+               class="form-control"
+               id="manufacturer"
+               @bind-value="sensorConfig.Manufacturer" name="manufacturer"
+               required />
+        @if (editContext.GetValidationMessages(() => sensorConfig.Manufacturer).Any())
+        {
+            <div class="invalid-feedback">
+                @editContext.GetValidationMessages(() => sensorConfig.Manufacturer).First()
+            </div>
+        }
+    </div>
+
+    <div class="form-group">
+        <label for="hostDevice">Host Device</label>
+        <input type="text"
+               class="form-control"
+               id="hostDevice"
+               @bind-value="sensorConfig.HostDevice" name="hostDevice"
+               required />
+        @if (editContext.GetValidationMessages(() => sensorConfig.HostDevice).Any())
+        {
+            <div class="invalid-feedback">
+                @editContext.GetValidationMessages(() => sensorConfig.HostDevice).First()
+            </div>
+        }
+    </div>
+
+    <div class="form-group">
+        <label for="units">Units</label>
+        <input type="text"
+               class="form-control"
+               id="units"
+               @bind-value="sensorConfig.SensorUnits" name="units"
+               required />
+        @if (editContext.GetValidationMessages(() => sensorConfig.SensorUnits).Any())
+        {
+            <div class="invalid-feedback">
+                @editContext.GetValidationMessages(() => sensorConfig.SensorUnits).First()
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-success">Submit</button>
+</EditForm>
+
+@code {
+    SensorConfigInfo sensorConfig = new SensorConfigInfo();
+    private EditContext editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(sensorConfig);
+        editContext.SetFieldCssClassProvider(new BootstrapFieldClassProvider());
+    }
+
+    public void OnSubmit()
+    {
+        if (!editContext.Validate()) return;
+
+        ConfigurationService.AddSensor(sensorConfig);
+        sensorConfig = new SensorConfigInfo();
+    }
+
+    // This class lets us modify the CSS class that will be added to the input elements
+    // when the properties they are bound to are invalid
+    // This way we can add the "is-invalid" to the input elements
+    // See: https://docs.microsoft.com/en-us/aspnet/core/blazor/forms-validation?view=aspnetcore-5.0#custom-validation-class-attributes
+    private class BootstrapFieldClassProvider : FieldCssClassProvider
+    {
+        public override string GetFieldCssClass(EditContext editContext, in FieldIdentifier fieldIdentifier)
+        {
+            var isValid = !editContext.GetValidationMessages(fieldIdentifier).Any();
+            return isValid ? "" : "is-invalid";
+        }
+    }
+}
