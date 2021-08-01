@@ -10,7 +10,7 @@ namespace BlazorSensorDashboard.Client
 {
     public class ConfigurationService
     {
-        Subject<SensorConfigInfo[]> SensorConfigSubj = new Subject<SensorConfigInfo[]>();
+        ReplaySubject<SensorConfigInfo[]> SensorConfigSubj = new ReplaySubject<SensorConfigInfo[]>();
 
         HubConnection hubConnection;
 
